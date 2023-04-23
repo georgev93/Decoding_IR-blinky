@@ -179,6 +179,23 @@ class printColors:
             print(printColors.colorEscapeCode(printColors.REDBKG), end='')
         print(str(input).rjust(digits) + printColors.colorEscapeCode(printColors.ENDCOLOR), end='')
 
+class codeViewer:
+    def __init__(self, name, operation):
+        self.name = name
+        self.comparison = comparisonObject(operation)
+        self.printCodeView()
+
+    def printCodeView(self):
+        addressList = list(decodedAddressArray.keys())
+        codeList = list(decodedAddressArray.values())
+        compareList = list(self.comparison.compareDict.values())
+        viewWidth = 2 + 2 + codeBitWidth + 2 + str(compareList[0]).__len__()
+        print(str(self.name).center(viewWidth))
+        print('-'*viewWidth)
+        for element in range(numOfDecodedAddresses):
+            print(addressList[element] + ': ' + codeList[element] + ', ' + compareList[element])
+        print()
+
 
 
 def decimalToBinary(decimalNumber, width):
@@ -195,3 +212,6 @@ if __name__ == '__main__':
     entropyNoop = bitEntropy('No op', 'Noop')
     entropyAddOne = bitEntropy('Add One', 'addOne')
     manchesterEntropy = bitEntropy('Manchester', 'manchester')
+    codeViewer('No op', 'Noop')
+    codeViewer('Add One', 'addOne')
+    codeViewer('Manchester', 'manchester')
