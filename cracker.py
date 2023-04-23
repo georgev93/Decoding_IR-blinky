@@ -34,7 +34,7 @@ class comparisonObject:
             return input
 
     @staticmethod
-    def addOne(input):
+    def minusOne(input):
         originalLength = str(input).__len__()
         return decimalToBinary(binaryToDecimal(input)+1, originalLength)
     
@@ -49,8 +49,23 @@ class comparisonObject:
         return outputStr
 
     @staticmethod
-    def manchesterPlusOne(input):
-        return comparisonObject.manchester(comparisonObject.addOne(input))
+    def manchesterMinusOne(input):
+        return comparisonObject.manchester(comparisonObject.minusOne(input))
+    
+    @staticmethod
+    def binaryPerDigit(input):
+        decimalNumber = int(binaryToDecimal(input))
+        if str(decimalNumber).__len__() == 1:
+            decimalNumber = '0' + str(decimalNumber)
+        return decimalToBinary(int(str(decimalNumber)[0]), 4) + decimalToBinary(int(str(decimalNumber)[1]), 4)
+    
+    @staticmethod
+    def binaryPerDigitMinusOne(input):
+        decimalNumber = int(binaryToDecimal(input))
+        decimalNumber = decimalNumber - 1
+        if str(decimalNumber).__len__() == 1:
+            decimalNumber = str('0' + str(decimalNumber))
+        return decimalToBinary(int(str(decimalNumber)[0]), 4) + decimalToBinary(int(str(decimalNumber)[1]), 4)
 
 
 class bitChangeMatrix:
@@ -211,6 +226,7 @@ class codeViewer:
     def printComparisonNumber(self, number):
         print(number, end='')
 
+
 class codeViewerWithEntropy(codeViewer, bitEntropy):
     def __init__(self, name, operation):
         self.name = name
@@ -238,11 +254,12 @@ def binaryToDecimal(binaryNumber):
 if __name__ == '__main__':
     csvReader('./discovered.csv')
     NoopAnalysis = bitChangeMatrix('No op', 'Noop')
-    addOneAnalysis = bitChangeMatrix('Add One', 'addOne')
+    addOneAnalysis = bitChangeMatrix('Minus One', 'minusOne')
     #manchesterAnalysis = bitChangeMatrix('Manchester', 'manchester')
     entropyNoop = bitEntropy('No op', 'Noop')
-    entropyAddOne = bitEntropy('Add One', 'addOne')
+    entropyAddOne = bitEntropy('Minus One', 'minusOne')
     #manchesterEntropy = bitEntropy('Manchester', 'manchester')
     codeViewerWithEntropy('No op', 'Noop')
-    codeViewerWithEntropy('Add One', 'addOne')
+    codeViewerWithEntropy('Minus One', 'minusOne')
+    codeViewerWithEntropy('Binary Per Digit', 'binaryPerDigit')
     #codeViewer('Manchester', 'manchester')
