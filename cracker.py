@@ -12,7 +12,8 @@ class csvReader:
         with open(csvInput, 'r', newline='') as csvInputFile:
             reader = csv.DictReader(csvInputFile, fieldnames=['address', 'code'])
             for row in reader:
-                decodedAddressArray[row['address']] = row['code'].lstrip()
+                if(str(row['address'])[0] != '#'):
+                    decodedAddressArray[row['address']] = row['code'].lstrip()
         globals()['numOfDecodedAddresses'] = decodedAddressArray.__len__()
 
 
@@ -166,8 +167,7 @@ class printColors:
     def colorEscapeCode(input):
         return str('\033[' + str(input) + 'm')
     
-    @staticmethod
-    def printColorScale(input, min, max, digits):
+    def printColorScaleAltText(input, min, max, text):
         percentage = (input-min)/(max-min)
         if(percentage < 0.25):
             print(printColors.colorEscapeCode(printColors.CYNBKG), end='')
@@ -177,7 +177,12 @@ class printColors:
             print(printColors.colorEscapeCode(printColors.YLWBKG), end='')
         else:
             print(printColors.colorEscapeCode(printColors.REDBKG), end='')
-        print(str(input).rjust(digits) + printColors.colorEscapeCode(printColors.ENDCOLOR), end='')
+        print(str(text) + printColors.colorEscapeCode(printColors.ENDCOLOR), end='')
+
+    @staticmethod
+    def printColorScale(input, min, max, digits):
+        printColors.printColorScaleAltText(input, min, max, str(input).rjust(digits))
+
 
 class codeViewer:
     def __init__(self, name, operation):
@@ -193,8 +198,34 @@ class codeViewer:
         print(str(self.name).center(viewWidth))
         print('-'*viewWidth)
         for element in range(numOfDecodedAddresses):
-            print(addressList[element] + ': ' + codeList[element] + ', ' + compareList[element])
+            print(addressList[element] + ': ', end='')
+            self.printCode(codeList[element])
+            print(', ', end='')
+            self.printComparisonNumber(compareList[element])
+            print()
         print()
+
+    def printCode(self, number):
+        print(number, end='')
+
+    def printComparisonNumber(self, number):
+        print(number, end='')
+
+class codeViewerWithEntropy(codeViewer, bitEntropy):
+    def __init__(self, name, operation):
+        self.name = name
+        self.comparison = comparisonObject(operation)
+        self.decodedEntropyArray = self.buildEntropyArray(list(decodedAddressArray.values()))
+        self.comparisonEntropyArray = self.buildEntropyArray(list(self.comparison.compareDict.values()))
+        self.printCodeView()
+
+    def printCode(self, number):
+        for bit in range(str(number).__len__()):
+            printColors.printColorScaleAltText(self.decodedEntropyArray[bit], 0, 50, str(number)[bit])
+
+    def printComparisonNumber(self, number):
+        for bit in range(str(number).__len__()):
+            printColors.printColorScaleAltText(self.comparisonEntropyArray[bit], 0, 50, str(number)[bit])
 
 
 
@@ -208,10 +239,10 @@ if __name__ == '__main__':
     csvReader('./discovered.csv')
     NoopAnalysis = bitChangeMatrix('No op', 'Noop')
     addOneAnalysis = bitChangeMatrix('Add One', 'addOne')
-    manchesterAnalysis = bitChangeMatrix('Manchester', 'manchester')
+    #manchesterAnalysis = bitChangeMatrix('Manchester', 'manchester')
     entropyNoop = bitEntropy('No op', 'Noop')
     entropyAddOne = bitEntropy('Add One', 'addOne')
-    manchesterEntropy = bitEntropy('Manchester', 'manchester')
-    codeViewer('No op', 'Noop')
-    codeViewer('Add One', 'addOne')
-    codeViewer('Manchester', 'manchester')
+    #manchesterEntropy = bitEntropy('Manchester', 'manchester')
+    codeViewerWithEntropy('No op', 'Noop')
+    codeViewerWithEntropy('Add One', 'addOne')
+    #codeViewer('Manchester', 'manchester')
