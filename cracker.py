@@ -16,39 +16,59 @@ class csvReader:
         globals()['numOfDecodedAddresses'] = decodedAddressArray.__len__()
 
 
-class bitChangeComparison:
+class comparisonObject:
 
-    def __init__(self, name, operation):
-        self.name = name
+    def __init__(self, operation):
         self.compareDict = {}
         self.listOfAddresses = []
-        self.outputMatrix = []
+        self.buildCompareDict(operation)
+
+    def buildCompareDict(self, operation):
+        for address in list(decodedAddressArray):
+            self.compareDict[address] = getattr(type(self), operation)(decimalToBinary(int(address), 7))
+            self.listOfAddresses.append(address)
+
+    @staticmethod
+    def Noop(input):
+            return input
+
+    @staticmethod
+    def addOne(input):
+        originalLength = str(input).__len__()
+        return decimalToBinary(binaryToDecimal(input)+1, originalLength)
+    
+    @staticmethod
+    def manchester(input):
+        outputStr = ''
+        for char in str(input):
+            if char == '0':
+                outputStr = outputStr + '01'
+            elif char == '1':
+                outputStr = outputStr + '10'
+        return outputStr
+
+    @staticmethod
+    def manchesterPlusOne(input):
+        return comparisonObject.manchester(comparisonObject.addOne(input))
+
+
+class bitChangeMatrix:
+    def __init__(self, name, operation):
+        self.name = name
+        self.outputMatrix = [['' for x in range(numOfDecodedAddresses)] for y in range(numOfDecodedAddresses)]
         self.decodedMin = 100
         self.decodedMax = 0
         self.compareMin = 100
         self.compareMax = 0
-        self.buildCompareDict(operation)
+        self.comparison = comparisonObject(operation)
         self.buildOutputMatrix()
         self.printArray()
 
-    def buildCompareDict(self, operation):
-        for address in list(decodedAddressArray):
-            #self.compareDict[address] = globals()[operation](decimalToBinary(int(address)))
-            self.compareDict[address] = getattr(type(self), operation)(decimalToBinary(int(address)))
-            self.listOfAddresses.append(address)
-
     def buildOutputMatrix(self):
-        # Build an empty matrix
-        for address in list(self.compareDict):
-            row = []
-            for address2 in list(self.compareDict):
-                row.append('  ')
-            self.outputMatrix.append(row)
-        
         # Compare discovered codes
         for row in range(numOfDecodedAddresses):
             for column in range(row):
-                differentBits = self.numOfBitsDifferent(decodedAddressArray.get(self.listOfAddresses[row]), decodedAddressArray.get(self.listOfAddresses[column]))
+                differentBits = self.numOfBitsDifferent(decodedAddressArray.get(self.comparison.listOfAddresses[row]), decodedAddressArray.get(self.comparison.listOfAddresses[column]))
                 self.outputMatrix[row][column] = differentBits
                 if differentBits < self.decodedMin:
                     self.decodedMin = differentBits
@@ -58,7 +78,7 @@ class bitChangeComparison:
         # Compare this object's "compare" values
         for row in range(numOfDecodedAddresses):
             for column in range(row+1, numOfDecodedAddresses):
-                differentBits = self.numOfBitsDifferent(self.compareDict.get(self.listOfAddresses[row]), self.compareDict.get(self.listOfAddresses[column]))
+                differentBits = self.numOfBitsDifferent(self.comparison.compareDict.get(self.comparison.listOfAddresses[row]), self.comparison.compareDict.get(self.comparison.listOfAddresses[column]))
                 self.outputMatrix[row][column] = differentBits
                 if differentBits < self.compareMin:
                     self.compareMin = differentBits
@@ -94,27 +114,46 @@ class bitChangeComparison:
                 retVal = retVal + 1
         return retVal
 
-    @staticmethod
-    def Noop(input):
-            return input
-
-    @staticmethod
-    def addOne(input):
-        return decimalToBinary(binaryToDecimal(input)+1)
+class bitEntropy:
+    def __init__(self, name, operation):
+        self.name = name
+        self.comparison = comparisonObject(operation)
+        self.decodedEntropyArray = self.buildEntropyArray(list(decodedAddressArray.values()))
+        self.comparisonEntropyArray = self.buildEntropyArray(list(self.comparison.compareDict.values()))
+        self.printEntropyReport()
     
-    @staticmethod
-    def manchester(input):
-        outputStr = ''
-        for char in str(input):
-            if char == '0':
-                outputStr = outputStr + '01'
-            elif char == '1':
-                outputStr = outputStr + '10'
-        return outputStr
+    def buildEntropyArray(self, input):
+        numOfBits = str(input[0]).__len__()
+        listLength = list(input).__len__()
+        retList = [0 for x in range(numOfBits)]
 
-    @staticmethod
-    def manchesterPlusOne(input):
-        return bitChangeComparison.manchester(bitChangeComparison.addOne(input))
+        for digit in range(numOfBits):
+            digitSum = 0
+            for element in input:
+                digitSum = digitSum + int(str(element)[digit])
+            entropyPercentage = digitSum/listLength
+            if entropyPercentage > 0.5:
+                entropyPercentage = 1 - entropyPercentage
+            retList[digit] = int(100*entropyPercentage)
+
+        return retList
+    
+    def printEntropyReport(self):
+        printWidth = 20 + 19*3
+        print(str(self.name).center(printWidth))
+        print('-'*printWidth)
+        print('Decoded entropy:    ', end='')
+        for number in self.decodedEntropyArray:
+            printColors.printColorScale(number, 0, 50, 2)
+            print(',', end='')
+        print()
+        print('Comparison entropy: ', end='')
+        for number in self.comparisonEntropyArray:
+            printColors.printColorScale(number, 0, 50, 2)
+            print(',', end='')
+        print()
+        print()
+        
 
 class printColors:
     CYNBKG = 46
@@ -142,15 +181,17 @@ class printColors:
 
 
 
-def decimalToBinary(decimalNumber):
-    return bin(decimalNumber).removeprefix('0b').rjust(codeBitWidth, '0')
+def decimalToBinary(decimalNumber, width):
+    return bin(decimalNumber).removeprefix('0b').rjust(width, '0')
 
 def binaryToDecimal(binaryNumber):
     return int(binaryNumber, 2)
 
 if __name__ == '__main__':
     csvReader('./discovered.csv')
-    NoopAnalysis = bitChangeComparison('Noop', 'Noop')
-    addOneAnalysis = bitChangeComparison('addOne', 'addOne')
-    machesterAnalysis = bitChangeComparison('machester', 'manchester')
-    machesterAnalysis2 = bitChangeComparison('Machester Plus One', 'manchesterPlusOne')
+    NoopAnalysis = bitChangeMatrix('No op', 'Noop')
+    addOneAnalysis = bitChangeMatrix('Add One', 'addOne')
+    manchesterAnalysis = bitChangeMatrix('Manchester', 'manchester')
+    entropyNoop = bitEntropy('No op', 'Noop')
+    entropyAddOne = bitEntropy('Add One', 'addOne')
+    manchesterEntropy = bitEntropy('Manchester', 'manchester')
