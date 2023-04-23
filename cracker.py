@@ -101,7 +101,20 @@ class bitChangeComparison:
     @staticmethod
     def addOne(input):
         return decimalToBinary(binaryToDecimal(input)+1)
+    
+    @staticmethod
+    def manchester(input):
+        outputStr = ''
+        for char in str(input):
+            if char == '0':
+                outputStr = outputStr + '01'
+            elif char == '1':
+                outputStr = outputStr + '10'
+        return outputStr
 
+    @staticmethod
+    def manchesterPlusOne(input):
+        return bitChangeComparison.manchester(bitChangeComparison.addOne(input))
 
 class printColors:
     CYNBKG = 46
@@ -139,3 +152,5 @@ if __name__ == '__main__':
     csvReader('./discovered.csv')
     NoopAnalysis = bitChangeComparison('Noop', 'Noop')
     addOneAnalysis = bitChangeComparison('addOne', 'addOne')
+    machesterAnalysis = bitChangeComparison('machester', 'manchester')
+    machesterAnalysis2 = bitChangeComparison('Machester Plus One', 'manchesterPlusOne')
